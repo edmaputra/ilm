@@ -6,6 +6,7 @@ import (
 
 	"github.com/edmaputra/ilm/config"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 var DB *sqlx.DB
@@ -13,7 +14,8 @@ var DB *sqlx.DB
 func InitDB() {
 	dsn := config.AppConfig.GetConnectionString()
 
-	DB, err := sqlx.Connect("postgres", dsn)
+	var err error
+	DB, err = sqlx.Open("postgres", dsn)
 
 	if err != nil {
 		log.Fatalf("Failed connect to database: %v", err)

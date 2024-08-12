@@ -12,7 +12,7 @@ type Config struct {
 	DbPwd  string
 	DbName string
 	DbHost string
-	DbPort uint8
+	DbPort uint
 }
 
 var AppConfig Config
@@ -33,7 +33,7 @@ func LoadConfig() {
 	AppConfig.DbPwd = viper.GetString("database.password")
 	AppConfig.DbName = viper.GetString("database.name")
 	AppConfig.DbHost = viper.GetString("database.host")
-	AppConfig.DbPort = uint8(viper.GetUint("database.port"))
+	AppConfig.DbPort = viper.GetUint("database.port")
 }
 
 func (c *Config) GetConnectionString() string {
