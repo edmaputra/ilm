@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,6 +10,7 @@ import (
 	"github.com/edmaputra/ilm/internal/controller/project"
 	"github.com/edmaputra/ilm/internal/db"
 	httpHandler "github.com/edmaputra/ilm/internal/handler/http"
+	"github.com/gofiber/fiber/v2"
 
 	"github.com/edmaputra/ilm/internal/repository/database"
 )
@@ -18,11 +18,6 @@ import (
 const COMMON_API_PREFIX = "/api/v1"
 
 func main() {
-	config.LoadConfig()
-
-	db.InitDB()
-	defer db.CloseDB()
-
 	// Handle graceful shutdown
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -33,16 +28,29 @@ func main() {
 		os.Exit(0)
 	}()
 
+	SetupServer()
+}
+
+func SetupServer() error {
+	config.LoadConfig()
+
+	db.InitDB()
+	defer db.CloseDB()
+
 	log.Println("Service start. Listening to port 10001...")
 
 	repo := database.New(db.DB)
 	controller := project.New(repo)
+
 	h := httpHandler.New(controller)
 
-	http.Handle(COMMON_API_PREFIX+"/projects", http.HandlerFunc(h.GetProject))
+	app := fiber.New()
 
-	if err := http.ListenAndServe(":10001", nil); err != nil {
-		panic(err)
-	}
+	db.InitDB()
+	defer db.CloseDB()
+
+	app.Get(COMMON_API_PREFIX+"/projects", h.GetOne)
+
+	return app.Listen(":10001")
 
 }

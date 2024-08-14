@@ -8,6 +8,7 @@ import (
 
 	"github.com/edmaputra/ilm/internal/controller/project"
 	"github.com/edmaputra/ilm/internal/repository"
+	"github.com/gofiber/fiber/v2"
 )
 
 type Handler struct {
@@ -41,4 +42,19 @@ func (h *Handler) GetProject(w http.ResponseWriter, req *http.Request) {
 	if err := json.NewEncoder(w).Encode(project); err != nil {
 		log.Printf("Encoding the response error: %v\n", err)
 	}
+}
+
+func (h *Handler) GetOne(c *fiber.Ctx) error {
+	id := c.Query("id")
+
+	project, err := h.controller.Get(c.Context(), id)
+
+	if err != nil && errors.Is(err, repository.ErrNotFound) {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "500"})
+	} else if err != nil {
+		log.Printf("Repository error: %v\n", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "500"})
+	}
+
+	return c.Status(http.StatusOK).JSON(project)
 }
