@@ -1,4 +1,4 @@
-package maintest_test
+package test
 
 import (
 	"encoding/json"
@@ -8,33 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edmaputra/ilm/internal/controller/project"
-	"github.com/edmaputra/ilm/internal/db"
-	httpHandler "github.com/edmaputra/ilm/internal/handler/http"
-	"github.com/gofiber/fiber/v2"
+	"github.com/edmaputra/ilm/internal/server"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/edmaputra/ilm/internal/repository/database"
 )
 
-const COMMON_API_PREFIX = "/api/v1"
-
-func TestGetOneProjectById(t *testing.T) {
-	LoadConfig()
-
-	db.InitDB()
-	defer db.CloseDB()
-
-	repo := database.New(db.DB)
-	controller := project.New(repo)
-
-	h := httpHandler.New(controller)
-
-	app := fiber.New()
-
-	db.InitDB()
-
-	app.Get(COMMON_API_PREFIX+"/projects", h.GetOne)
+func BasicFlow(m *testing.M) {
+	app := server.Setup()
+	defer server.Teardown()
 
 	go func() {
 		err := app.Listen(":10001")
@@ -44,6 +24,13 @@ func TestGetOneProjectById(t *testing.T) {
 	}()
 
 	time.Sleep(time.Duration(1) * time.Second)
+
+	m.Run()
+}
+
+func TestGetOneProjectById(t *testing.T) {
+	app := server.Setup()
+	defer server.Teardown()
 
 	resp, err := app.Test(httptest.NewRequest("GET", "/api/v1/projects?id=1", nil))
 	if err != nil {
@@ -57,7 +44,4 @@ func TestGetOneProjectById(t *testing.T) {
 	json.NewDecoder(resp.Body).Decode(&resBody)
 
 	assert.Equal(t, "1", resBody["id"])
-
-	app.Shutdown()
-
 }
