@@ -22,8 +22,17 @@ func LoadConfig() {
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("./config")
+	viper.AddConfigPath("..")
 
 	viper.AutomaticEnv()
+
+	viper.SetDefault("environment", "")
+
+	environment := viper.GetString("GO_ENV")
+	if environment != "" {
+		fmt.Println("Using environment:", environment)
+		viper.SetConfigName("config." + environment)
+	}
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Failed read the config file: %v", err)
