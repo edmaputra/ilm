@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/edmaputra/ilm/internal/server"
+	helper_test "github.com/edmaputra/ilm/test/helper"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,9 +41,11 @@ func TestGetOneProjectById(t *testing.T) {
 
 	assert.Equal(t, resp.StatusCode, http.StatusOK)
 
-	var resBody map[string]interface{}
+	var expected, actual map[string]interface{}
 
-	json.NewDecoder(resp.Body).Decode(&resBody)
+	helper_test.ReadJSONFile("./spec/project-1.json", &expected)
 
-	assert.Equal(t, "1", resBody["id"])
+	json.NewDecoder(resp.Body).Decode(&actual)
+
+	assert.Equal(t, expected, actual, "The JSON objects should be equal")
 }
