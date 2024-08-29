@@ -9,14 +9,21 @@ import (
 	"time"
 
 	"github.com/edmaputra/ilm/internal/server"
+	"github.com/edmaputra/ilm/test"
 	helper_test "github.com/edmaputra/ilm/test/helper"
+	"github.com/gofiber/fiber/v2"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func BasicFlow(m *testing.M) {
-	app := server.Setup()
+var app *fiber.App
+
+func TestMain(m *testing.M) {
+	app = server.Setup()
+	test.MigrateDataUp()
+
 	defer server.Teardown()
+	defer test.MigrateDataDown()
 
 	go func() {
 		err := app.Listen(":10001")
@@ -31,9 +38,6 @@ func BasicFlow(m *testing.M) {
 }
 
 func TestGetOneProjectById(t *testing.T) {
-	app := server.Setup()
-	defer server.Teardown()
-
 	resp, err := app.Test(httptest.NewRequest("GET", "/api/v1/projects?id=1", nil))
 	if err != nil {
 		log.Printf("Failed to create request: %v", err)

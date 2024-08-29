@@ -49,3 +49,7 @@ func (c *Config) GetConnectionString() string {
 	return fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d sslmode=disable",
 		c.DbUser, c.DbPwd, c.DbName, c.DbHost, c.DbPort)
 }
+
+func (c *Config) GetMigrateConnectionUrl() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", c.DbUser, c.DbPwd, c.DbHost, c.DbPort, c.DbName)
+}
