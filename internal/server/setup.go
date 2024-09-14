@@ -4,10 +4,10 @@ import (
 	"log"
 
 	"github.com/edmaputra/ilm/config"
-	"github.com/edmaputra/ilm/internal/controller/project"
+	projectCtrl "github.com/edmaputra/ilm/internal/controller/project"
 	"github.com/edmaputra/ilm/internal/db"
-	httpHandler "github.com/edmaputra/ilm/internal/handler/http"
-	"github.com/edmaputra/ilm/internal/repository/database"
+	projectHttp "github.com/edmaputra/ilm/internal/handler/http/project"
+	projectDb "github.com/edmaputra/ilm/internal/repository/database/project"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -20,14 +20,11 @@ func Setup() *fiber.App {
 
 	db.InitDB()
 
-	repo := database.New(db.DB)
-	controller := project.New(repo)
-
-	h := httpHandler.New(controller)
+	projectHandler := projectHttp.New(projectCtrl.New(projectDb.New(db.DB)))
 
 	app = fiber.New()
 
-	app.Get(COMMON_API_PREFIX+"/projects", h.GetOne)
+	app.Get(COMMON_API_PREFIX+"/projects", projectHandler.GetOne)
 
 	return app
 }

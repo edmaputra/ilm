@@ -1,4 +1,4 @@
-package database
+package project
 
 import (
 	"context"
