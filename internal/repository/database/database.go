@@ -2,9 +2,10 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"log"
 
-	"github.com/edmaputra/ilm/internal/repository"
+	"github.com/edmaputra/ilm/internal/e"
 	"github.com/edmaputra/ilm/pkg/model"
 	"github.com/jmoiron/sqlx"
 )
@@ -25,7 +26,12 @@ func (r *Repository) Get(_ context.Context, id string) (*model.Project, error) {
 
 	if err != nil {
 		log.Println(err)
-		return nil, repository.ErrNotFound
+
+		if err == sql.ErrNoRows {
+			return nil, e.ErrNotFound
+		}
+
+		return nil, e.ErrUnknown
 	}
 
 	return &project, nil

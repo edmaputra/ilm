@@ -2,13 +2,9 @@ package project
 
 import (
 	"context"
-	"errors"
 
-	"github.com/edmaputra/ilm/internal/repository"
 	"github.com/edmaputra/ilm/pkg/model"
 )
-
-var ErrNotFound = errors.New("not found")
 
 type projectRepository interface {
 	Get(ctx context.Context, id string) (*model.Project, error)
@@ -27,8 +23,8 @@ func New(repo projectRepository) *Controller {
 func (c *Controller) Get(ctx context.Context, id string) (*model.Project, error) {
 	project, err := c.repo.Get(ctx, id)
 
-	if err != nil && errors.Is(err, repository.ErrNotFound) {
-		return nil, ErrNotFound
+	if err != nil {
+		return nil, err
 	}
 
 	return project, nil

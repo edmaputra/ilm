@@ -1,0 +1,7 @@
+{
+    "status": "NOT_FOUND",
+    "code": 404,
+    "error": {
+        "message": "Project with ID 123 was not found"
+    }
+}

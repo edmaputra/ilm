@@ -53,3 +53,20 @@ func TestGetOneProjectById(t *testing.T) {
 
 	assert.Equal(t, expected, actual, "The JSON objects should be equal")
 }
+
+func TestGetOneProjectById_NotFound(t *testing.T) {
+	resp, err := app.Test(httptest.NewRequest("GET", "/api/v1/projects?id=123", nil))
+	if err != nil {
+		log.Printf("Failed to create request: %v", err)
+	}
+
+	assert.Equal(t, resp.StatusCode, http.StatusOK)
+
+	var expected, actual map[string]interface{}
+
+	helper_test.ReadJSONFile("./spec/project-not-found.json", &expected)
+
+	json.NewDecoder(resp.Body).Decode(&actual)
+
+	assert.Equal(t, expected, actual, "The JSON objects should be equal")
+}
