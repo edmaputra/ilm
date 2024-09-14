@@ -1,4 +1,4 @@
-package http
+package project
 
 import (
 	"errors"
@@ -25,10 +25,12 @@ func (h *Handler) GetOne(c *fiber.Ctx) error {
 
 	project, err := h.controller.Get(c.Context(), id)
 
-	if err != nil && errors.Is(err, e.ErrNotFound) {
-		return c.Status(http.StatusOK).JSON(httputils.NewJSONErrorResponse(http.StatusNotFound, "NOT_FOUND", fmt.Sprintf(err.Error(), "Project", id)))
-	} else if err != nil {
-		log.Printf("Repository error: %v\n", err)
+	if err != nil {
+		if errors.Is(err, e.ErrNotFound) {
+			return c.Status(http.StatusOK).JSON(httputils.NewJSONErrorResponse(http.StatusNotFound, "NOT_FOUND", fmt.Sprintf(err.Error(), "Project", id)))
+		}
+
+		log.Printf("Controller error: %v\n", err)
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "500"})
 	}
 
