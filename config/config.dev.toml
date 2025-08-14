@@ -1,0 +1,10 @@
+[database]
+name = "ilm_dev"
+user = "ilm_user"
+password = "ilm_password"
+host = "localhost"
+port = 5432
+
+[server]
+host = "127.0.0.1"
+port = 10001
