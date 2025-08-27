@@ -2,10 +2,12 @@ use actix_web::{test, web, App};
 use uuid::Uuid;
 use serde_json::json;
 
-use ilm::presentation::handlers::{ProjectHandler, TaskHandler, get_project, get_task, get_tasks_by_project};
+use ilm::presentation::{ProjectHandler, TaskHandler};
+use ilm::presentation::project_handlers::{get_project};
+use ilm::presentation::task_handlers::{get_task, get_tasks_by_project};
 use ilm::application::{ProjectService, TaskService};
 use ilm::infrastructure::{DatabaseProjectRepository, DatabaseTaskRepository};
-use ilm::domain::{Project, Task, TaskStatus, TaskPriority, AppResult, AppError};
+use ilm::domain::{Project, Task, TaskPriority, AppResult, AppError};
 use ilm::application::repository::{ProjectRepository, TaskRepository};
 
 // Mock repository for testing

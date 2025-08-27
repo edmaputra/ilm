@@ -10,9 +10,9 @@ mod presentation;
 
 use config::AppConfig;
 use infrastructure::database::Database;
-use infrastructure::repository::DatabaseProjectRepository;
+use infrastructure::project_repository::DatabaseProjectRepository;
 use application::project::ProjectService;
-use presentation::handlers::ProjectHandler;
+use presentation::project_handlers::{ProjectHandler, get_project};
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -42,7 +42,7 @@ async fn main() -> io::Result<()> {
             .app_data(web::Data::new(project_handler.clone()))
             .service(
                 web::scope("/api/v1")
-                    .route("/projects", web::get().to(presentation::handlers::get_project))
+                    .route("/projects", web::get().to(get_project))
             )
     })
     .bind(&server_address)?
