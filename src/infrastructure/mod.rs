@@ -2,4 +2,4 @@ pub mod database;
 pub mod repository;
 
 pub use database::Database;
-pub use repository::DatabaseProjectRepository;
+pub use repository::{DatabaseProjectRepository, DatabaseTaskRepository};
