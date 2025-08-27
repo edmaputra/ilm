@@ -1,0 +1,86 @@
+# Rust Makefile for ILM project
+
+.PHONY: help build run test clean dev docker migration check format lint
+
+# Default target
+help:
+	@echo "Available targets:"
+	@echo "  build     - Build the application in release mode"
+	@echo "  run       - Run the application"
+	@echo "  dev       - Run in development mode with auto-reload"
+	@echo "  test      - Run all tests"
+	@echo "  check     - Check code without building"
+	@echo "  format    - Format code with rustfmt"
+	@echo "  lint      - Run clippy linter"
+	@echo "  clean     - Clean build artifacts"
+	@echo "  docker    - Build Docker image"
+	@echo "  migration - Run database migrations"
+
+# Build the application
+build:
+	cargo build --release
+
+# Run the application
+run:
+	cargo run
+
+# Development mode with auto-reload
+dev:
+	cargo watch -x run
+
+# Run tests
+test:
+	cargo test
+
+# Check code without building
+check:
+	cargo check
+
+# Format code
+format:
+	cargo fmt
+
+# Run linter
+lint:
+	cargo clippy -- -D warnings
+
+# Clean build artifacts
+clean:
+	cargo clean
+
+# Build Docker image
+docker:
+	docker build -f Dockerfile.rust -t ilm-rust .
+
+# Run database migrations
+migration:
+	sqlx migrate run
+
+# Install development dependencies
+install-deps:
+	cargo install cargo-watch sqlx-cli
+
+# Set up database for development
+setup-db:
+	createdb ilm || echo "Database might already exist"
+	sqlx migrate run
+
+# Full development setup
+setup: install-deps setup-db
+	@echo "Development environment ready!"
+
+# Run application with Docker Compose
+docker-run:
+	docker-compose up --build
+
+# Stop Docker services
+docker-stop:
+	docker-compose down
+
+# Production build and package
+package: build
+	mkdir -p dist
+	cp target/release/ilm dist/
+	cp -r config dist/
+	cp -r migrations dist/
+	tar -czf dist/ilm-rust.tar.gz -C dist ilm config migrations
