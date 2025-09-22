@@ -123,3 +123,7 @@ config/config.*.local.toml
 
 # Local development
 local/
+
+# Added by cargo
+
+/target
