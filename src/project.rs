@@ -1,5 +1,6 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::time::{SystemTime, UNIX_EPOCH};
+use time::{OffsetDateTime, format_description};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -32,13 +33,36 @@ pub struct Project {
     pub description: Option<String>,
     pub status: ProjectStatus,
     pub owner_id: Uuid,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: i64,         // Unix timestamp in milliseconds
+    pub updated_at: i64,         // Unix timestamp in milliseconds
+    pub created_by: Uuid,        // Who created this project
+    pub updated_by: Uuid,        // Who last updated this project
 }
 
+// Helper function to get current Unix timestamp in milliseconds
+fn current_timestamp() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_millis() as i64
+}
+
+// Helper function to format timestamp as human-readable string
+fn timestamp_to_string(timestamp_ms: i64) -> String {
+    let datetime = OffsetDateTime::from_unix_timestamp_nanos((timestamp_ms * 1_000_000) as i128)
+        .unwrap_or_else(|_| OffsetDateTime::UNIX_EPOCH);
+    
+    let format = format_description::parse(
+        "[day]/[month]/[year] [hour]:[minute]:[second].[subsecond digits:3] UTC"
+    ).unwrap();
+    
+    datetime.format(&format).unwrap_or_else(|_| "Invalid date".to_string())
+}
+
+// Helper function to convert days since epoch to ddMMyyyy format
 impl Project {
-    pub fn new(name: String, description: Option<String>, owner_id: Uuid) -> Self {
-        let now = Utc::now();
+    pub fn new(name: String, description: Option<String>, owner_id: Uuid, created_by: Uuid) -> Self {
+        let now = current_timestamp();
         Self {
             id: Uuid::new_v4(),
             name,
@@ -47,22 +71,27 @@ impl Project {
             owner_id,
             created_at: now,
             updated_at: now,
+            created_by,
+            updated_by: created_by, // Initially, creator is also the updater
         }
     }
 
-    pub fn update_name(&mut self, name: String) {
+    pub fn update_name(&mut self, name: String, updated_by: Uuid) {
         self.name = name;
-        self.updated_at = Utc::now();
+        self.updated_at = current_timestamp();
+        self.updated_by = updated_by;
     }
 
-    pub fn update_description(&mut self, description: Option<String>) {
+    pub fn update_description(&mut self, description: Option<String>, updated_by: Uuid) {
         self.description = description;
-        self.updated_at = Utc::now();
+        self.updated_at = current_timestamp();
+        self.updated_by = updated_by;
     }
 
-    pub fn update_status(&mut self, status: ProjectStatus) {
+    pub fn update_status(&mut self, status: ProjectStatus, updated_by: Uuid) {
         self.status = status;
-        self.updated_at = Utc::now();
+        self.updated_at = current_timestamp();
+        self.updated_by = updated_by;
     }
 
     pub fn is_active(&self) -> bool {
@@ -89,6 +118,27 @@ impl Project {
         }
 
         Ok(())
+    }
+
+    // Utility methods for timestamp handling
+    pub fn created_at_formatted(&self) -> String {
+        timestamp_to_string(self.created_at)
+    }
+
+    pub fn updated_at_formatted(&self) -> String {  
+        timestamp_to_string(self.updated_at)
+    }
+
+    pub fn age_in_milliseconds(&self) -> i64 {
+        current_timestamp() - self.created_at
+    }
+
+    pub fn age_in_seconds(&self) -> i64 {
+        self.age_in_milliseconds() / 1000
+    }
+
+    pub fn age_in_days(&self) -> i64 {
+        self.age_in_seconds() / 86400 // 24 * 60 * 60
     }
 }
 

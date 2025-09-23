@@ -16,6 +16,8 @@ The Task domain represents individual work items that contribute to project comp
 - A task MAY be assigned to a user
 - A task MAY have a due date
 - A task MUST have creation and last updated timestamps
+- A task MUST track who created it (created_by User ID)
+- A task MUST track who last updated it (updated_by User ID)
 - A task MUST start with "Todo" status and "Medium" priority by default
 
 ### 2.2 Task Information Management (FR-T-002)
@@ -25,6 +27,7 @@ The Task domain represents individual work items that contribute to project comp
 - Authorized users MUST be able to update task title
 - Authorized users MUST be able to update task description
 - System MUST update the "updated_at" timestamp on any modification
+- System MUST update the "updated_by" field with the user making the change
 - Changes MUST be validated before saving
 
 ### 2.3 Task Status Management (FR-T-003)
@@ -34,6 +37,7 @@ The Task domain represents individual work items that contribute to project comp
 - Task status MUST be one of: Todo, InProgress, Done, Blocked
 - Status transitions SHOULD follow workflow rules
 - Status changes MUST update the "updated_at" timestamp
+- Status changes MUST update the "updated_by" field with the user making the change
 - Completed tasks (Done) SHOULD be immutable except for comments
 
 ### 2.4 Task Priority Management (FR-T-004)
@@ -42,6 +46,7 @@ The Task domain represents individual work items that contribute to project comp
 **Acceptance Criteria**:
 - Task priority MUST be one of: Low, Medium, High, Urgent
 - Priority changes MUST update the "updated_at" timestamp
+- Priority changes MUST update the "updated_by" field with the user making the change
 - System SHOULD support priority-based sorting and filtering
 
 ### 2.5 Task Assignment (FR-T-005)
@@ -50,6 +55,7 @@ The Task domain represents individual work items that contribute to project comp
 **Acceptance Criteria**:
 - Tasks MAY be assigned to zero or one user
 - Assignment changes MUST update the "updated_at" timestamp
+- Assignment changes MUST update the "updated_by" field with the user making the change
 - Assignees MUST receive notifications of assignment
 - Only project members CAN be assigned to tasks
 
@@ -60,6 +66,7 @@ The Task domain represents individual work items that contribute to project comp
 - Tasks MAY have an optional due date
 - System MUST identify overdue tasks (past due date and not completed)
 - Due date changes MUST update the "updated_at" timestamp
+- Due date changes MUST update the "updated_by" field with the user making the change
 - System SHOULD send notifications before due dates
 
 ### 2.7 Task Validation (FR-T-007)
@@ -71,6 +78,8 @@ The Task domain represents individual work items that contribute to project comp
 - Task description MUST NOT exceed 1000 characters if provided
 - Project ID MUST reference an existing project
 - Assignee ID MUST reference an existing user if provided
+- Created_by ID MUST be a valid UUID
+- Updated_by ID MUST be a valid UUID
 - Due date MUST be a valid future date if provided
 
 ### 2.8 Task Query and Display (FR-T-008)
@@ -79,9 +88,21 @@ The Task domain represents individual work items that contribute to project comp
 **Acceptance Criteria**:
 - Tasks MUST display title, status, priority, and assignee
 - Tasks MUST show due date and overdue status if applicable
-- System MUST support filtering by status, priority, assignee, project
+- Tasks MUST show who created and last updated the task
+- System MUST support filtering by status, priority, assignee, project, creator, updater
 - System MUST support searching by title and description
 - System MUST support sorting by priority, due date, creation date
+
+### 2.9 Task Audit Trail (FR-T-009)
+**Description**: System must maintain complete audit trail for tasks
+**Priority**: High
+**Acceptance Criteria**:
+- System MUST track who created each task
+- System MUST track who made each modification
+- All update operations MUST record the user making the change
+- Audit information MUST be immutable once recorded
+- System MUST support querying tasks by creator or modifier
+- Task assignment changes MUST be auditable
 
 ## 3. Non-Functional Requirements
 
@@ -101,7 +122,8 @@ The Task domain represents individual work items that contribute to project comp
 - Only authenticated users CAN create tasks
 - Only project members CAN view project tasks
 - Only assignees or project owners CAN modify task status
-- All task operations MUST be auditable
+- All task operations MUST be auditable with user tracking
+- System MUST maintain audit trail of who created and modified tasks
 
 ### 3.4 Usability (NFR-T-004)
 - Task creation MUST be quick and intuitive
@@ -154,6 +176,8 @@ pub struct Task {
     pub due_date: Option<DateTime<Utc>>, // Optional deadline
     pub created_at: DateTime<Utc>,    // Creation timestamp
     pub updated_at: DateTime<Utc>,    // Last modification timestamp
+    pub created_by: Uuid,             // Who created this task
+    pub updated_by: Uuid,             // Who last updated this task
 }
 
 pub enum TaskStatus {
@@ -175,14 +199,14 @@ pub enum TaskPriority {
 
 ### 6.1 Create Task
 - **Endpoint**: POST /projects/{project_id}/tasks
-- **Input**: title, description?, assignee_id?, due_date?, priority?
-- **Output**: Created task with generated ID and timestamps
+- **Input**: title, description?, assignee_id?, due_date?, priority?, created_by
+- **Output**: Created task with generated ID, timestamps, and audit fields
 - **Status Codes**: 201 Created, 400 Bad Request, 401 Unauthorized, 404 Not Found
 
 ### 6.2 Update Task
 - **Endpoint**: PUT /tasks/{id}
-- **Input**: title?, description?, status?, priority?, assignee_id?, due_date?
-- **Output**: Updated task
+- **Input**: title?, description?, status?, priority?, assignee_id?, due_date?, updated_by
+- **Output**: Updated task with updated timestamp and audit fields
 - **Status Codes**: 200 OK, 400 Bad Request, 403 Forbidden, 404 Not Found
 
 ### 6.3 Get Task
@@ -192,14 +216,14 @@ pub enum TaskPriority {
 
 ### 6.4 List Tasks
 - **Endpoint**: GET /projects/{project_id}/tasks
-- **Query Parameters**: status?, priority?, assignee_id?, overdue?, search?
-- **Output**: List of tasks with pagination
+- **Query Parameters**: status?, priority?, assignee_id?, created_by?, updated_by?, overdue?, search?
+- **Output**: List of tasks with pagination and audit information
 - **Status Codes**: 200 OK, 404 Not Found
 
 ### 6.5 Assign Task
 - **Endpoint**: PATCH /tasks/{id}/assign
-- **Input**: assignee_id?
-- **Output**: Updated task
+- **Input**: assignee_id?, updated_by
+- **Output**: Updated task with updated timestamp and audit fields
 - **Status Codes**: 200 OK, 400 Bad Request, 403 Forbidden, 404 Not Found
 
 ## 7. Test Scenarios
