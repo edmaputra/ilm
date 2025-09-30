@@ -1,51 +1,72 @@
-use actix_web::{web, App, HttpServer};
-use std::{io, sync::Arc};
-use tracing_actix_web::TracingLogger;
+use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
-mod config;
-mod domain;
-mod infrastructure;
-mod application;
-mod presentation;
+mod project;
+mod task;
 
-use config::AppConfig;
-use infrastructure::database::Database;
-use infrastructure::project_repository::DatabaseProjectRepository;
-use application::project::ProjectService;
-use presentation::project_handlers::{ProjectHandler, get_project};
+use project::Project;
+use task::Task;
 
-#[actix_web::main]
-async fn main() -> io::Result<()> {
-    // Initialize tracing
-    tracing_subscriber::fmt::init();
+fn main() {
+    println!("🚀 ILM - Issue & Project Management System");
+    println!("==========================================\n");
 
-    // Load configuration
-    let config = AppConfig::load().expect("Failed to load configuration");
+    // Create sample users
+    let owner_id = Uuid::new_v4();
+    let assignee_id = Uuid::new_v4();
+    let admin_id = Uuid::new_v4();
     
-    // Initialize database
-    let database = Database::new(&config.database.connection_string())
-        .await
-        .expect("Failed to connect to database");
-
-    // Setup dependencies
-    let project_repository = Arc::new(DatabaseProjectRepository::new(database.pool().clone()));
-    let project_service = ProjectService::new(project_repository);
-    let project_handler = ProjectHandler::new(project_service);
-
-    let server_address = format!("{}:{}", config.server.host, config.server.port);
+    // Create a new project
+    let project = Project::new(
+        "Web Application Redesign".to_string(),
+        Some("Complete redesign of the company website with modern UI/UX".to_string()),
+        owner_id,
+        owner_id, // created_by is the owner
+    );
     
-    tracing::info!("Starting server at {}", server_address);
+    println!("📁 Created Project:");
+    println!("   {}", project);
+    println!("   ID: {}", project.id);
+    println!("   Owner: {}", project.owner_id);
 
-    HttpServer::new(move || {
-        App::new()
-            .wrap(TracingLogger::default())
-            .app_data(web::Data::new(project_handler.clone()))
-            .service(
-                web::scope("/api/v1")
-                    .route("/projects", web::get().to(get_project))
-            )
-    })
-    .bind(&server_address)?
-    .run()
-    .await
+    // Create some tasks for the project
+    let mut tasks = vec![
+        Task::new(
+            "Design new homepage mockup".to_string(),
+            Some("Create wireframes and high-fidelity mockups for the new homepage".to_string()),
+            project.id,
+            Some(assignee_id),
+            Some(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64 + 7 * 24 * 3600 * 1000), // 7 days from now
+            owner_id, // created_by
+        ),
+        Task::new(
+            "Set up development environment".to_string(),
+            Some("Configure local development setup with latest framework versions".to_string()),
+            project.id,
+            Some(assignee_id),
+            Some(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64 + 3 * 24 * 3600 * 1000), // 3 days from now
+            owner_id, // created_by
+        ),
+        Task::new(
+            "Research competitor websites".to_string(),
+            None,
+            project.id,
+            None,
+            Some(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64 - 24 * 3600 * 1000), // 1 day ago (overdue)
+            admin_id, // created_by (different user)
+        ),
+    ];
+
+    // Modify some tasks to show different statuses and priorities
+    use task::{TaskStatus, TaskPriority};
+    
+    tasks[0].priority = TaskPriority::High;
+    tasks[1].status = TaskStatus::InProgress;
+    tasks[1].priority = TaskPriority::Medium;
+    tasks[2].priority = TaskPriority::Low;
+
+    println!("\n📋 Created Tasks:");
+    for (i, task) in tasks.iter().enumerate() {
+        println!("   {}. {}", i + 1, task);
+    }
 }
